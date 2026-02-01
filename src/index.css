@@ -1,117 +1,226 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary-50: #e6f1ff;
-  --color-primary-100: #cce3ff;
-  --color-primary-200: #99c7ff;
-  --color-primary-300: #66abff;
-  --color-primary-400: #338fff;
-  --color-primary-500: #0073ff;
-  --color-primary-600: #005acc;
-  --color-primary-700: #004399;
-  --color-primary-800: #002d66;
-  --color-primary-900: #001633;
+/* ===========================================
+   DESIGN TOKENS - CSS Custom Properties
+   =========================================== */
+:root {
+  /* Colors - Primary Palette */
+  --color-bg-primary: #0d1117;
+  --color-bg-secondary: #161b22;
+  --color-bg-tertiary: #21262d;
 
-  --font-family-serif: Merriweather, Georgia, serif;
+  /* Colors - Border */
+  --color-border: #30363d;
+  --color-border-subtle: #21262d;
+
+  /* Colors - Accent */
+  --color-accent: #1e40af;
+  --color-accent-hover: #1d4ed8;
+
+  /* Colors - Status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  --color-active: #22d3ee;
+
+  /* Colors - Text - WCAG AA Compliant */
+  --color-text-primary: #f0f6fc;
+  --color-text-secondary: #8b949e;
+  /* Muted increased from #6e7681 (3.1:1) to #8b949e (4.7:1) for WCAG AA compliance */
+  --color-text-muted: #8b949e;
+
+  /* Spacing (4px grid) - P1: Increased density */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 16px; /* Reduced from 24px for density */
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+
+  /* Borders */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  /* Focus */
+  --focus-ring: 2px solid #1e40af;
+  --focus-offset: 2px;
+  --focus-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-accent);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+
+  /* Button */
+  --btn-height: 36px;
+  --btn-padding-x: 16px;
+  --btn-padding-y: 8px;
+  --btn-font-size: 14px;
+  --btn-font-weight: 500;
 }
 
+/* ===========================================
+   BASE STYLES
+   =========================================== */
 @layer base {
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    background-color: #111827;
-    color: #f3f4f6;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Professional heading styles */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-family-serif);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Metrics and timestamps - monospace */
+  .font-metrics {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
+  /* Uppercase labels */
+  .label-uppercase {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  /* Typography Classes - P1: Consistent typography scale */
+  .heading-1 {
+    font-size: 20px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .heading-2 {
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .heading-3 {
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .body {
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 400;
+    color: var(--color-text-primary);
+  }
+
+  .caption {
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 400;
+    color: var(--color-text-secondary);
+  }
+
+  .mono {
+    font-size: 13px;
+    line-height: 1.6;
+    font-weight: 500;
+    font-family: var(--font-mono);
+    color: var(--color-text-primary);
+  }
+
+  /* Focus visible for keyboard navigation */
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
   }
 }
 
+/* ===========================================
+   ANIMATIONS
+   =========================================== */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.3; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===========================================
+   COMPONENTS
+   =========================================== */
 @layer components {
-  /* Custom scrollbar styles */
-  .scrollbar-thin {
+  /* Custom scrollbar - consistent styling */
+  .scrollbar-shift {
     scrollbar-width: thin;
-    scrollbar-color: #4b5563 transparent;
+    scrollbar-color: var(--color-border) var(--color-bg-secondary);
   }
 
-  .scrollbar-thin::-webkit-scrollbar {
+  .scrollbar-shift::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+  .scrollbar-shift::-webkit-scrollbar-track {
+    background: var(--color-bg-secondary);
     border-radius: 3px;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280;
+  .scrollbar-shift::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 3px;
   }
 
-  /* Loading skeleton animation */
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+  .scrollbar-shift::-webkit-scrollbar-thumb:hover {
+    background-color: #484f58;
   }
 
-  .skeleton {
-    background: linear-gradient(
-      90deg,
-      #1f2937 0%,
-      #374151 50%,
-      #1f2937 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  /* Focus styles for accessibility - inline since @apply has issues with custom classes in Tailwind v4 */
-  .focus-ring:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: var(--color-primary-500);
-    ring-offset: 2px;
-    ring-offset-color: #111827;
-  }
-
-  /* Card hover effects */
-  .card-hover {
-    transition: all 0.2s ease;
-  }
-
-  .card-hover:hover {
-    box-shadow: 0 10px 40px -10px rgba(0, 115, 255, 0.1);
-  }
-
-  /* Button base styles */
+  /* ===========================================
+     BUTTONS - P0 Fix: No gradients, solid colors
+     =========================================== */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    height: var(--btn-height);
+    min-width: 88px;
+    padding: var(--btn-padding-y) var(--btn-padding-x);
+    border-radius: var(--radius-sm);
+    font-weight: var(--btn-font-weight);
+    font-size: var(--btn-font-size);
+    font-family: var(--font-sans);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
     cursor: pointer;
+    border: none;
+    /* No gradient, no shadow - professional command center style */
   }
 
-  .btn:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: var(--color-primary-500);
-    ring-offset: 2px;
-    ring-offset-color: #111827;
+  .btn:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
   }
 
   .btn:disabled {
@@ -119,124 +228,290 @@
     cursor: not-allowed;
   }
 
+  /* Primary button - Solid accent background, white text */
   .btn-primary {
-    background-color: var(--color-primary-500);
+    background-color: var(--color-accent);
     color: white;
   }
 
-  .btn-primary:hover {
-    background-color: var(--color-primary-600);
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
   }
 
-  .btn-primary:active {
-    background-color: var(--color-primary-700);
-  }
-
+  /* Secondary button - Transparent with border */
   .btn-secondary {
-    background-color: #374151;
-    color: #f3f4f6;
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
   }
 
-  .btn-secondary:hover {
-    background-color: #4b5563;
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-bg-tertiary);
   }
 
-  /* Input styles */
+  /* Ghost button - Transparent, text only */
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-accent);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: rgba(30, 64, 175, 0.1);
+  }
+
+  /* Danger button - Error background, white text */
+  .btn-danger {
+    background-color: var(--color-error);
+    color: white;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+  }
+
+  /* ===========================================
+     INPUTS
+     =========================================== */
   .input {
     width: 100%;
-    background-color: #111827;
-    border: 1px solid #374151;
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    color: #f3f4f6;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--btn-padding-y) 12px;
+    color: var(--color-text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    font-size: var(--btn-font-size);
+    min-height: var(--btn-height);
+    font-family: var(--font-sans);
+    box-sizing: border-box;
   }
 
   .input::placeholder {
-    color: #6b7280;
+    color: var(--color-text-muted);
   }
 
   .input:focus {
     outline: none;
-    border-color: var(--color-primary-500);
-    box-shadow: 0 0 0 1px var(--color-primary-500);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
   }
 
-  /* Card base styles */
+  .input:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* ===========================================
+     CARDS - P0 Fix: 4px border-radius
+     =========================================== */
   .card {
-    background-color: #1f2937;
-    border-radius: 0.5rem;
-    border: 1px solid #374151;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
   }
 
-  /* Badge styles */
+  .card:hover {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  .card:focus-within {
+    outline: none;
+    box-shadow: var(--focus-shadow);
+  }
+
+  /* ===========================================
+     BADGES
+     =========================================== */
   .badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
     font-weight: 500;
+    height: 20px;
+    box-sizing: border-box;
+  }
+
+  /* Status badges */
+  .badge-success {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--color-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .badge-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--color-warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .badge-error {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-error);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .badge-info {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--color-info);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  /* ===========================================
+     STATUS INDICATORS - P0 Fix: 8px with pulsing
+     =========================================== */
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* Status dot - 8px minimum for visibility from 6ft */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot-success {
+    background-color: var(--color-success);
+  }
+
+  .status-dot-warning {
+    background-color: var(--color-warning);
+  }
+
+  .status-dot-error {
+    background-color: var(--color-error);
+  }
+
+  .status-dot-info {
+    background-color: var(--color-info);
+  }
+
+  /* Pulsing animation for active/processing states */
+  .status-dot-pulse {
+    animation: status-pulse 2s ease-in-out infinite;
+  }
+
+  /* Pulsing ring variant for active agents (visible from distance) */
+  .status-pulse-ring {
+    position: relative;
+    width: 8px;
+    height: 8px;
+  }
+
+  .status-pulse-ring::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background-color: currentColor;
+    opacity: 0.2;
+    animation: status-pulse 2s ease-in-out infinite;
+  }
+
+  .status-pulse-ring-success {
+    color: var(--color-success);
+  }
+
+  .status-pulse-ring-warning {
+    color: var(--color-warning);
+  }
+
+  .status-pulse-ring-error {
+    color: var(--color-error);
+  }
+
+  .status-pulse-ring-info {
+    color: var(--color-info);
+  }
+
+  .status-pulse-ring-active {
+    color: var(--color-active);
+  }
+
+  /* ===========================================
+     PANELS - P0 Fix: 4px border-radius
+     =========================================== */
+  .panel {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .panel-header {
+    background-color: var(--color-bg-tertiary);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-3) var(--space-4);
+    font-weight: 500;
+    min-height: var(--btn-height);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  .panel-body {
+    padding: var(--space-3);
   }
 }
 
+/* ===========================================
+   UTILITIES
+   =========================================== */
 @layer utilities {
-  /* Animation utilities */
+  /* Text colors utility classes */
+  .text-primary { color: var(--color-text-primary); }
+  .text-secondary { color: var(--color-text-secondary); }
+  .text-muted { color: var(--color-text-muted); }
+
+  /* Background utility classes */
+  .bg-primary { background-color: var(--color-bg-primary); }
+  .bg-secondary { background-color: var(--color-bg-secondary); }
+  .bg-tertiary { background-color: var(--color-bg-tertiary); }
+
+  /* Border utility classes */
+  .border-subtle { border-color: var(--color-border-subtle); }
+
+  /* Remove playful animations */
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: none;
+    opacity: 1;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 
   .animate-slide-down {
-    animation: slideDown 0.3s ease-out;
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+  .animate-slide-in-right {
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .animate-pulse-slow {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Text truncation */
-  .truncate-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .truncate-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 }

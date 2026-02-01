@@ -1,33 +1,77 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { Activity, Clock, AlertCircle } from "lucide-react";
 
 // Loading skeleton component
 function ActivitySkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="border-l-2 border-primary-500/30 pl-3 py-2">
-          <div className="skeleton h-4 w-full rounded mb-2" />
-          <div className="skeleton h-3 w-20 rounded" />
+        <div key={i} className="border-l-2 border-accent/30 pl-3 py-1">
+          <div className="skeleton h-4 w-full rounded mb-1" />
+          <div className="skeleton h-3 w-12 rounded" />
         </div>
       ))}
     </div>
   );
 }
 
+// Error state component
+function ActivityError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="text-center py-6">
+      <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+        <AlertCircle className="w-5 h-5 text-error" />
+      </div>
+      <p className="text-text-secondary text-sm mb-2">Failed to load activities</p>
+      <button
+        onClick={onRetry}
+        className="btn btn-secondary"
+      >
+        Try Again
+      </button>
+    </div>
+  );
+}
+
+// Empty state component
+function ActivityEmpty() {
+  return (
+    <div className="text-center py-8">
+      <Activity className="w-10 h-10 text-text-muted mx-auto mb-2" />
+      <p className="text-sm text-text-secondary">No recent activity</p>
+      <p className="text-xs text-text-muted mt-1">Activities will appear here</p>
+    </div>
+  );
+}
+
 export function ActivityFeed() {
-  const [isLoading] = useState(false)
-  const activities = !isLoading ? getMockActivities() : []
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [activities, setActivities] = useState<any[]>(() => getMockActivities())
+
+  const handleRetry = useCallback(() => {
+    setError(null)
+    setIsLoading(true)
+    setTimeout(() => {
+      setActivities(getMockActivities())
+      setIsLoading(false)
+    }, 500)
+  }, [])
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 animate-fade-in">
-      <h2 className="text-lg font-semibold mb-4 text-gray-100">
+    <div className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl p-4 border border-border/50">
+      <h2 className="heading-2 mb-3">
         Activity Feed
       </h2>
 
-      {isLoading ? (
+      {error ? (
+        <ActivityError onRetry={handleRetry} />
+      ) : isLoading ? (
         <ActivitySkeleton />
+      ) : activities.length === 0 ? (
+        <ActivityEmpty />
       ) : (
-        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
+        <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
           {activities?.map((activity: any) => (
             <ActivityItem key={activity._id || activity.id} activity={activity} />
           ))}
@@ -39,13 +83,27 @@ export function ActivityFeed() {
 
 function ActivityItem({ activity }: { activity: any }) {
   const timeAgo = getTimeAgo(activity.timestamp || Date.now())
+  const formattedDate = new Date(activity.timestamp).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
 
   return (
-    <div className="text-sm border-l-2 border-primary-500 pl-3 py-2 hover:bg-gray-700/50 rounded-r transition-colors duration-200">
-      <p className="text-gray-300">{activity.message}</p>
-      <time className="text-gray-500 text-xs" dateTime={new Date(activity.timestamp).toISOString()}>
-        {timeAgo}
-      </time>
+    <div className="text-sm border-l-2 border-accent/60 pl-2.5 py-1.5 hover:bg-bg-tertiary/50 rounded-r-lg transition-colors duration-150 group">
+      <p className="text-text-primary group-hover:text-white mb-1">{activity.message}</p>
+      <div className="flex items-center gap-1.5">
+        <Clock className="w-3 h-3 text-text-muted" />
+        <time 
+          className="text-xs text-text-secondary font-medium" 
+          dateTime={new Date(activity.timestamp).toISOString()}
+          title={formattedDate}
+        >
+          {timeAgo}
+        </time>
+      </div>
     </div>
   );
 }

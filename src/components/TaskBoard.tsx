@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { AlertCircle, Inbox } from "lucide-react";
 import { TaskDetail } from "./TaskDetail";
+import type { TaskStatus } from "../types";
 
-const COLUMNS = [
+const COLUMNS: { key: TaskStatus; label: string }[] = [
   { key: "inbox", label: "Inbox" },
   { key: "assigned", label: "Assigned" },
   { key: "in_progress", label: "In Progress" },
@@ -13,16 +15,16 @@ const COLUMNS = [
 // Loading skeleton for task columns
 function TaskBoardSkeleton() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between mb-3">
-            <div className="skeleton h-4 w-20 rounded" />
-            <div className="skeleton h-5 w-8 rounded-full" />
+        <div key={i} className="bg-bg-primary rounded-lg p-3 border border-border">
+          <div className="flex items-center justify-between mb-2">
+            <div className="skeleton h-4 w-16 rounded" />
+            <div className="skeleton h-5 w-6 rounded-full" />
           </div>
           <div className="space-y-2">
             {[...Array(2)].map((_, j) => (
-              <div key={j} className="skeleton h-20 rounded" />
+              <div key={j} className="skeleton h-16 rounded" />
             ))}
           </div>
         </div>
@@ -31,38 +33,90 @@ function TaskBoardSkeleton() {
   );
 }
 
+// Error state component
+function TaskBoardError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="bg-bg-secondary rounded-lg p-6 border border-border text-center">
+      <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+        <AlertCircle className="w-5 h-5 text-error" />
+      </div>
+      <h3 className="text-sm font-semibold text-text-primary mb-1">Failed to load tasks</h3>
+      <p className="text-xs text-text-secondary mb-3">Unable to fetch tasks. Please check your connection.</p>
+      <button
+        onClick={onRetry}
+        className="btn btn-primary"
+      >
+        Try Again
+      </button>
+    </div>
+  );
+}
+
 export function TaskBoard() {
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [isLoading] = useState(false);
-  const [tasks, setTasks] = useState(() => getMockTasks());
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<any[]>(() => getMockTasks());
 
   const tasksByStatus = COLUMNS.reduce((acc, { key }) => {
     acc[key] = tasks?.filter((t: any) => t.status === key) || [];
     return acc;
   }, {} as Record<string, any[]>);
 
-  const handleTaskClick = (task: any) => {
+  const handleTaskClick = useCallback((task: any) => {
     setSelectedTask(task);
-  };
+  }, []);
 
-  const handleUpdateTask = (taskId: string | number, updates: any) => {
+  const handleUpdateTask = useCallback((taskId: string | number, updates: any) => {
     setTasks(prev => prev.map(t =>
       (('id' in t && t.id === taskId) || ('_id' in t && t._id === taskId)) ? { ...t, ...updates } : t
     ));
     setSelectedTask((prev: any) => prev ? { ...prev, ...updates } : null);
-  };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setIsLoading(true);
+    setTimeout(() => {
+      setTasks(getMockTasks());
+      setIsLoading(false);
+    }, 500);
+  }, []);
+
+  const totalTasks = Object.values(tasksByStatus).reduce((sum, arr) => sum + arr.length, 0);
 
   return (
     <>
-      <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700 animate-fade-in">
-        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-100">
-          Task Board
-        </h2>
+      <div className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl p-4 border border-border/50">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="heading-2">
+            Task Board
+          </h2>
+          {totalTasks > 0 && (
+            <span className="caption px-2 py-0.5 bg-bg-primary/50 rounded-full">
+              {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+            </span>
+          )}
+        </div>
 
-        {isLoading ? (
+        {error ? (
+          <TaskBoardError onRetry={handleRetry} />
+        ) : isLoading ? (
           <TaskBoardSkeleton />
+        ) : totalTasks === 0 ? (
+          <div className="text-center py-8">
+            <Inbox className="w-10 h-10 mx-auto mb-2 text-text-muted" />
+            <p className="text-sm text-text-secondary">No tasks yet</p>
+            <p className="text-xs text-text-muted mt-1 mb-3">Create your first task to get started</p>
+            <button
+              onClick={() => console.log('Create task clicked')}
+              className="btn btn-primary"
+            >
+              Create first task
+            </button>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 overflow-x-auto pb-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 overflow-x-auto pb-2">
             {COLUMNS.map((column) => (
               <TaskColumn
                 key={column.key}
@@ -94,26 +148,36 @@ interface TaskColumnProps {
 }
 
 function TaskColumn({ status, label, tasks, onTaskClick }: TaskColumnProps) {
-  const getColumnColor = () => {
+  const getColumnConfig = () => {
     switch (status) {
-      case "blocked": return "border-red-500/30";
-      case "done": return "border-green-500/30";
-      case "in_progress": return "border-primary-500/30";
-      default: return "border-gray-700";
+      case "blocked": 
+        return { border: "border-error/60 bg-error/5", badge: "bg-error/20 text-error", label: "text-error" };
+      case "done": 
+        return { border: "border-success/60 bg-success/5", badge: "bg-success/20 text-success", label: "text-success" };
+      case "in_progress": 
+        return { border: "border-accent/60 bg-accent/5", badge: "bg-accent/20 text-accent", label: "text-accent" };
+      case "review": 
+        return { border: "border-warning/60 bg-warning/5", badge: "bg-warning/20 text-warning", label: "text-warning" };
+      case "assigned": 
+        return { border: "border-blue-500/60 bg-blue-500/5", badge: "bg-blue-500/20 text-blue-400", label: "text-blue-400" };
+      default: 
+        return { border: "border-border bg-bg-secondary/50", badge: "bg-bg-tertiary/50 text-text-secondary", label: "text-text-secondary" };
     }
   };
 
+  const config = getColumnConfig();
+
   return (
-    <div className={`bg-gray-900 rounded-lg p-3 sm:p-4 border ${getColumnColor()} min-w-[140px] sm:min-w-0`}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs sm:text-sm font-semibold text-gray-400 uppercase truncate">
+    <div className={`bg-bg-primary/80 rounded-lg p-3 border ${config.border} min-w-[120px]`}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className={`text-xs font-semibold uppercase truncate ${config.label}`}>
           {label}
         </h3>
-        <span className="text-xs font-medium text-gray-500 bg-gray-800 rounded-full px-2 py-0.5 flex-shrink-0">
+        <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${config.badge}`}>
           {tasks.length}
         </span>
       </div>
-      <div className="space-y-2 max-h-[400px] sm:max-h-[500px] overflow-y-auto pr-1 scrollbar-thin">
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
         {tasks.map((task) => (
           <TaskCard key={task._id || task.id} task={task} onClick={() => onTaskClick(task)} />
         ))}
@@ -128,31 +192,50 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onClick }: TaskCardProps) {
-  const priorityColors = {
-    high: "border-red-500",
-    medium: "border-yellow-500",
-    low: "border-green-500",
+  const priorityConfig = {
+    high: { 
+      border: "border-red-500 bg-red-500/10", 
+      badge: "bg-red-500/20 text-red-400",
+      label: "High"
+    },
+    medium: { 
+      border: "border-amber-500 bg-amber-500/10", 
+      badge: "bg-amber-500/20 text-amber-400",
+      label: "Medium"
+    },
+    low: { 
+      border: "border-emerald-500 bg-emerald-500/10", 
+      badge: "bg-emerald-500/20 text-emerald-400",
+      label: "Low"
+    },
+  };
+
+  const config = priorityConfig[task.priority as keyof typeof priorityConfig] || { 
+    border: "border-border bg-bg-secondary", 
+    badge: "bg-bg-tertiary text-text-secondary",
+    label: ""
   };
 
   return (
     <div
       onClick={onClick}
-      className={`bg-gray-800 rounded p-2 sm:p-3 border-l-2 ${priorityColors[task.priority as keyof typeof priorityColors] || "border-gray-600"} border-r border-t border-b border-gray-700 hover:border-primary-500 transition-all duration-200 cursor-pointer group`}
+      className={`bg-bg-secondary/80 rounded-lg p-2.5 border-l-2 ${config.border} border-r border-t border-b border-border hover:bg-bg-secondary hover:border-border/80 transition-colors duration-150 cursor-pointer group`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
     >
-      <h4 className="text-xs sm:text-sm font-medium text-gray-100 mb-1 group-hover:text-primary-400 transition-colors line-clamp-2">
-        {task.title}
-      </h4>
-      <p className="text-xs text-gray-400 line-clamp-2 mb-2">
-        {task.description}
-      </p>
+      <div className="flex items-start justify-between gap-1 mb-1">
+        <h4 className="text-xs font-medium text-text-primary group-hover:text-white transition-colors line-clamp-2 flex-1">
+          {task.title}
+        </h4>
+        {config.label && (
+          <span className={`text-xs px-1.5 py-0.5 rounded ${config.badge} flex-shrink-0`}>
+            {config.label}
+          </span>
+        )}
+      </div>
       {task.assignedTo && (
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
+        <div className="flex items-center gap-1 text-xs text-text-muted">
           <span className="truncate">{task.assignedTo}</span>
         </div>
       )}

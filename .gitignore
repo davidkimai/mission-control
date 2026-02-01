@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# Development documentation (exclude from production repo)
+*.md
+!README.md

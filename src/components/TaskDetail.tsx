@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Comment {
   id: number;
@@ -20,7 +20,7 @@ interface Task {
 }
 
 interface TaskDetailProps {
-  task: Task;
+  task: Task | null;
   isOpen: boolean;
   onClose: () => void;
   onUpdateTask?: (taskId: string | number, updates: Partial<Task>) => void;
@@ -42,8 +42,40 @@ export function TaskDetail({ task, isOpen, onClose, onUpdateTask }: TaskDetailPr
     },
   ]);
   const [newComment, setNewComment] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
 
-  if (!isOpen) return null;
+  // Handle escape key and focus management
+  useEffect(() => {
+    if (isOpen) {
+      previousActiveElement.current = document.activeElement as HTMLElement;
+      document.body.style.overflow = 'hidden';
+      // Focus on close button for accessibility
+      setTimeout(() => {
+        const closeBtn = panelRef.current?.querySelector('[data-close-btn]') as HTMLElement;
+        closeBtn?.focus();
+      }, 100);
+    } else {
+      document.body.style.overflow = '';
+      previousActiveElement.current?.focus();
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !task) return null;
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
@@ -75,33 +107,42 @@ export function TaskDetail({ task, isOpen, onClose, onUpdateTask }: TaskDetailPr
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed inset-0 bg-black/60 z-40 transition-opacity duration-300"
         onClick={onClose}
+        aria-hidden="true"
       />
       
-      {/* Modal */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-gray-800 border-l border-gray-700 z-50 overflow-y-auto">
-        <div className="p-6">
+      {/* Modal - responsive: full width on mobile, fixed width on desktop */}
+      <div 
+        ref={panelRef}
+        className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md md:max-w-lg lg:max-w-xl bg-bg-secondary border-l border-border overflow-y-auto animate-slide-in-right"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="task-detail-title"
+      >
+        <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h2 className="text-2xl font-semibold text-gray-100 mb-2">
+            <div className="flex-1 min-w-0 pr-4">
+              <h2 id="task-detail-title" className="text-xl sm:text-2xl font-semibold text-text-primary mb-2 truncate">
                 {task.title}
               </h2>
-              <div className="flex items-center gap-3">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${priorityColors[task.priority as keyof typeof priorityColors] || "bg-gray-600"} text-white`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${priorityColors[task.priority as keyof typeof priorityColors] || "bg-gray-600"} text-white`}>
                   {task.priority || "medium"}
                 </span>
-                <span className="px-2 py-1 rounded text-xs font-medium bg-primary-500 text-white">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent text-white capitalize">
                   {task.status.replace("_", " ")}
                 </span>
               </div>
             </div>
             <button
+              data-close-btn
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-100 transition-colors"
+              className="text-text-secondary hover:text-text-primary transition-colors p-3 rounded-lg hover:bg-bg-tertiary focus:outline-none focus:ring-2 focus:ring-accent flex-shrink-0"
+              aria-label="Close task details"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -109,32 +150,33 @@ export function TaskDetail({ task, isOpen, onClose, onUpdateTask }: TaskDetailPr
 
           {/* Description */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">
+            <h3 className="text-sm font-semibold text-text-secondary uppercase mb-2">
               Description
             </h3>
-            <p className="text-gray-300">
+            <p className="text-text-primary whitespace-pre-wrap">
               {task.description}
             </p>
           </div>
 
           {/* Details */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
-              <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">
+              <h3 className="text-sm font-semibold text-text-secondary uppercase mb-2">
                 Assigned To
               </h3>
-              <p className="text-gray-300">
+              <p className="text-text-primary">
                 {task.assignedTo || "Unassigned"}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">
+              <label htmlFor="status-select" className="text-sm font-semibold text-text-secondary uppercase mb-2 block">
                 Status
-              </h3>
+              </label>
               <select
+                id="status-select"
                 value={task.status}
                 onChange={(e) => handleStatusChange(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-primary-500"
+                className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
               >
                 <option value="inbox">Inbox</option>
                 <option value="assigned">Assigned</option>
@@ -148,22 +190,22 @@ export function TaskDetail({ task, isOpen, onClose, onUpdateTask }: TaskDetailPr
 
           {/* Comments */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-4">
+            <h3 className="text-sm font-semibold text-text-secondary uppercase mb-4">
               Comments ({comments.length})
             </h3>
             
-            <div className="space-y-4 mb-4">
+            <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
               {comments.map((comment) => (
-                <div key={comment.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-100">
+                <div key={comment.id} className="bg-bg-primary rounded-lg p-3 border border-border">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold text-text-primary">
                       {comment.author}
                     </span>
-                    <time className="text-xs text-gray-500">
+                    <time className="text-xs text-text-muted">
                       {comment.timestamp.toLocaleString()}
                     </time>
                   </div>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-text-primary text-sm">
                     {comment.text}
                   </p>
                 </div>
@@ -178,11 +220,13 @@ export function TaskDetail({ task, isOpen, onClose, onUpdateTask }: TaskDetailPr
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAddComment()}
                 placeholder="Add a comment..."
-                className="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-primary-500"
+                className="flex-1 bg-bg-primary border border-border rounded-lg px-3 py-2 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                aria-label="New comment"
               />
               <button
                 onClick={handleAddComment}
-                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded font-medium transition-colors"
+                disabled={!newComment.trim()}
+                className="btn btn-primary"
               >
                 Add
               </button>
@@ -190,8 +234,8 @@ export function TaskDetail({ task, isOpen, onClose, onUpdateTask }: TaskDetailPr
           </div>
 
           {/* Timestamps */}
-          <div className="border-t border-gray-700 pt-4">
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+          <div className="border-t border-border pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-text-muted">
               <div>
                 <span className="font-semibold">Created:</span>{" "}
                 {task.createdAt?.toLocaleString() || "Unknown"}
